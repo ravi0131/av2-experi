@@ -110,12 +110,12 @@ def filter_roi(velo):
     indices = np.where(q)[0]
     return velo[indices, :]
 
-def get_bbox_corners(params: Tuple) -> List:
+def get_bbox_corners(params: Tuple) -> np.ndarray:
     """
     Calculate the four corners of each bounding box from parameters.
 
     Args:
-        bbox_params: List of tuples, each containing (cx, cy, length, width, angle)
+        bbox_params: A tuples containing (cx, cy, length, width, angle)
                     where cx,cy is center, length/width are dimensions, angle in radians
 
     Returns:
@@ -145,3 +145,36 @@ def get_bbox_corners(params: Tuple) -> List:
     # Transform to global frame
     global_corners = (rotation_matrix @ local_corners.T).T + np.array([cx, cy])
     return global_corners
+
+def plot_point_cloud_and_bboxes(points: np.ndarray, bboxes: np.ndarray, fig_size= (10, 10)):
+    """
+    Plots a 2D bird's eye view (BEV) of a point cloud and bounding boxes.
+
+    Args:
+        points (np.ndarray): A numpy array of shape (N, 2) representing the point cloud (x, y).
+        bboxes (np.ndarray): A numpy array of shape (M, 4, 2) representing bounding boxes 
+                             where each box is defined by 4 corners (x, y).
+    """
+    # Check input dimensions
+    assert points.shape[1] == 2, "Points must have shape (N, 2)."
+    assert bboxes.shape[1:] == (4, 2), "Bounding boxes must have shape (M, 4, 2)."
+
+    plt.figure(figsize=fig_size)
+    
+    # Plot the point cloud
+    plt.scatter(points[:, 0], points[:, 1], s=1, color='blue', label='Point Cloud', alpha=0.5)
+
+    # Plot each bounding box
+    for bbox in bboxes:
+        # Append the first corner at the end to close the bounding box
+        bbox_closed = np.vstack([bbox, bbox[0]])
+        plt.plot(bbox_closed[:, 0], bbox_closed[:, 1], color='red', linewidth=2)
+
+    # Add labels, legends, and grid
+    plt.xlabel('X')
+    plt.ylabel('Y')
+    plt.title('Bird\'s Eye View of Point Cloud and Bounding Boxes')
+    plt.legend(loc='upper right')
+    plt.grid(True)
+    plt.axis('equal')  # Maintain aspect ratio
+    plt.show()
